@@ -7,6 +7,12 @@ from werkzeug.utils import secure_filename
 from PIL import Image, ImageStat
 import logging
 
+
+from dotenv import load_dotenv
+load_dotenv()
+
+
+
 # Import configuration
 from config import SECRET_KEY, UPLOAD_FOLDER, DB_PATH, ALLOWED_EXTENSIONS, MAX_IMAGE_SIZE, QUALITY, MAIL_SERVER, MAIL_PORT, MAIL_USERNAME, MAIL_PASSWORD, MAIL_USE_TLS, MAIL_USE_SSL, SESSION_TYPE, SESSION_FILE_DIR, SESSION_PERMANENT
 

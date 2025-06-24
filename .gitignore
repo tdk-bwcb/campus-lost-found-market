@@ -7,3 +7,4 @@ venv/
 config.py
 *.pyc
 instance/
+.env

@@ -23,7 +23,6 @@ def login():
         password = request.form['password']
         
         user = models.verify_user(username, password)
-        # Prevent login if email not confirmed
         if user and not user.get('is_confirmed', 0):
             flash('Please confirm your email before logging in.', 'warning')
             return redirect(url_for('auth.login'))
@@ -70,10 +69,8 @@ def register():
         
         user_id = models.create_user(username, email, password)
         if user_id:
-            # Send confirmation email
             token = serializer.dumps(email, salt='email-confirm')
             confirm_url = url_for('auth.confirm_email', token=token, _external=True)
-            # Log confirmation URL for offline testing
             print(f'Confirmation URL: {confirm_url}')
             msg = Message('Confirm Your Email', sender=MAIL_USERNAME, recipients=[email])
             msg.body = f'Please click the link to confirm your email: {confirm_url}'
@@ -81,9 +78,7 @@ def register():
                 mail.send(msg)
                 flash('A confirmation email has been sent. Please check your inbox.', 'info')
             except Exception:
-                # Fallback: show confirmation link to user
                 flash(f'Registration successful. Please confirm using this link: {confirm_url}', 'warning')
-            # Ensure no user remains logged in until confirmation
             logout_user()
             resp = make_response(redirect(url_for('auth.login')))
             resp.set_cookie('rate_limit', datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
@@ -95,7 +90,6 @@ def register():
 
 @auth_bp.route('/confirm/<token>')
 def confirm_email(token):
-    # Ensure no one is auto-logged in before confirmation
     logout_user()
     try:
         email = serializer.loads(token, salt='email-confirm', max_age=3600)
@@ -126,41 +120,37 @@ def logout():
 @login_required
 def profile():
     user = models.get_user_by_id(current_user.id)
-    
-    # Add created_at and role for the template
+
     if user and 'created_at' not in user:
-        user['created_at'] = datetime.now().strftime('%B %Y')  # Default value
+        user['created_at'] = datetime.now().strftime('%B %Y')
     if user and 'role' not in user:
-        user['role'] = 'student'  # Default value
-    
-    # Get all lost and found items posted by this user
+        user['role'] = 'student'
+
     lost_found_items = models.get_lost_found_items(filters={'user_id': current_user.id})
-    
-    # Get all marketplace items posted by this user
     marketplace_items = models.get_marketplace_items(filters={'user_id': current_user.id})
-    
-    # Get recent items for the dashboard tab
+
     recent_items = []
-    # Add lost and found items with type indicator
     for item in lost_found_items[:5]:
         item['type'] = 'lost_found'
+        item.setdefault('price', 0.0)
+        item.setdefault('condition', 'N/A')
+        item.setdefault('location', 'Unknown')
+        item.setdefault('date', datetime.now())
         recent_items.append(item)
-    
-    # Add marketplace items with type indicator
+
     for item in marketplace_items[:5]:
         item['type'] = 'marketplace'
+        item.setdefault('date', datetime.now())
         recent_items.append(item)
-    
-    # Sort by date (newest first)
+
     recent_items.sort(key=lambda x: x['date'], reverse=True)
-    recent_items = recent_items[:10]  # Limit to 10 items
-    
+    recent_items = recent_items[:10]
+
     if request.method == 'POST':
-        # Handle deletion of lost and found items
         if request.form.get('lost_found_id'):
             item_id = request.form.get('lost_found_id')
             item = models.get_lost_found_item(item_id)
-            
+
             if item and (item['user_id'] == current_user.id or user['is_admin']):
                 if models.delete_lost_found_item(item_id):
                     flash('Item deleted successfully.', 'success')
@@ -168,14 +158,13 @@ def profile():
                     flash('Failed to delete item.', 'danger')
             else:
                 flash('You are not authorized to delete this item.', 'danger')
-                
+
             return redirect(url_for('auth.profile'))
-            
-        # Handle deletion of marketplace items
+
         if request.form.get('market_id'):
             item_id = request.form.get('market_id')
             item = models.get_marketplace_item(item_id)
-            
+
             if item and (item['user_id'] == current_user.id or user['is_admin']):
                 if models.delete_marketplace_item(item_id):
                     flash('Item deleted successfully.', 'success')
@@ -183,11 +172,11 @@ def profile():
                     flash('Failed to delete item.', 'danger')
             else:
                 flash('You are not authorized to delete this item.', 'danger')
-                
+
             return redirect(url_for('auth.profile'))
-    
-    return render_template('auth/profile.html', user=user, 
-                          lost_found_items=lost_found_items, 
+
+    return render_template('auth/profile.html', user=user,
+                          lost_found_items=lost_found_items,
                           marketplace_items=marketplace_items,
                           recent_items=recent_items)
 
@@ -198,51 +187,42 @@ def update_profile():
     if not user:
         flash('User not found', 'danger')
         return redirect(url_for('auth.profile'))
-    
-    # Get form data
+
     username = request.form.get('username')
     email = request.form.get('email')
     role = request.form.get('role')
     current_password = request.form.get('current_password')
     new_password = request.form.get('new_password')
     confirm_password = request.form.get('confirm_password')
-    
-    # Prepare update data
+
     update_data = {}
-    
-    # Update username if changed and not already taken
+
     if username != user['username']:
         existing_user = models.get_user_by_username(username)
         if existing_user and existing_user['id'] != user['id']:
             flash('Username already taken', 'danger')
             return redirect(url_for('auth.profile'))
         update_data['username'] = username
-    
-    # Update email if changed
+
     if email != user['email']:
         update_data['email'] = email
-    
-    # Update role if provided
+
     if role:
         update_data['role'] = role
-    
-    # Update password if provided
+
     if current_password and new_password:
         if new_password != confirm_password:
             flash('New passwords do not match', 'danger')
             return redirect(url_for('auth.profile'))
-        
-        # Verify current password
+
         hashed_current = hashlib.sha256(current_password.encode()).hexdigest()
         if hashed_current != user['password']:
             flash('Current password is incorrect', 'danger')
             return redirect(url_for('auth.profile'))
-        
-        # Update password
+
         hashed_new = hashlib.sha256(new_password.encode()).hexdigest()
         update_data['password'] = hashed_new
-    
-    # Update user in database if there are changes
+
     if update_data:
         if update_user_profile(user['id'], update_data):
             flash('Profile updated successfully', 'success')
@@ -250,25 +230,22 @@ def update_profile():
             flash('Error updating profile', 'danger')
     else:
         flash('No changes made', 'info')
-    
+
     return redirect(url_for('auth.profile'))
 
 def update_user_profile(user_id, update_data):
-    """Update user profile in database."""
     conn = models.get_db_connection()
     cur = conn.cursor()
-    
-    # Prepare update fields and values
+
     update_fields = []
     update_values = []
-    
+
     for key, value in update_data.items():
         update_fields.append(f"{key} = ?")
         update_values.append(value)
-    
-    # Add user_id to values
+
     update_values.append(user_id)
-    
+
     try:
         query = f"UPDATE user SET {', '.join(update_fields)} WHERE id = ?"
         cur.execute(query, update_values)
