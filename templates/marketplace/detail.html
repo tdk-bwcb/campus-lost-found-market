@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block title %}{{ item.name }} - Marketplace{% endblock %}
+
+{% block marketplace_active %}active{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto px-4 py-6">
+  <nav class="text-sm text-gray-600 mb-4">
+    <ol class="list-reset flex space-x-2">
+      <li><a href="{{ url_for('marketplace.dashboard') }}" class="text-blue-600 hover:underline">Marketplace</a></li>
+      <li>/</li>
+      <li>{{ item.name }}</li>
+    </ol>
+  </nav>
+
+  <div class="grid md:grid-cols-2 gap-6 bg-white p-6 rounded-2xl shadow-md">
+    <div>
+      {% if item.image_path %}
+        <img src="{{ url_for('static', filename=item.image_path[1:]) }}" alt="{{ item.name }}"
+             class="rounded-lg w-full object-cover max-h-[400px]">
+      {% else %}
+        <div class="bg-gray-100 h-64 flex items-center justify-center text-gray-400 rounded-lg">
+          No image available
+        </div>
+      {% endif %}
+    </div>
+
+    <div>
+      <span class="inline-block px-3 py-1 mb-3 rounded-full text-xs font-semibold 
+                   {{ 'bg-green-100 text-green-800' if item.status == 'available' else 'bg-yellow-100 text-yellow-800' }}">
+        {{ item.status|capitalize }}
+      </span>
+
+      <h1 class="text-2xl font-semibold mb-2">{{ item.name }}</h1>
+      <div class="text-xl font-bold text-blue-700 mb-4">₹{{ "%.2f"|format(item.price) }}</div>
+
+      <p class="text-gray-700 mb-4">{{ item.description }}</p>
+
+      <div class="space-y-2 text-sm text-gray-600 mb-4">
+        <p><strong>Condition:</strong> {{ item.condition|capitalize }}</p>
+        <p><strong>Location:</strong> {{ item.location }}</p>
+        <p><strong>Listed:</strong> {{ item.date }}</p>
+        <p><strong>Category:</strong> {{ item.category|capitalize }}</p>
+      </div>
+
+      {% if current_user.is_authenticated and (item.user_id == current_user.id or user['is_admin']) %}
+      <div class="bg-gray-50 p-4 rounded-md border border-gray-200 mb-4">
+        <p><strong>Seller:</strong> {{ item.username }}</p>
+        <p><strong>Contact:</strong> {{ item.contact_info }}</p>
+      </div>
+      {% endif %}
+
+      <div class="flex flex-wrap gap-3 mt-4">
+        {% if current_user.is_authenticated and (item.user_id == current_user.id or user['is_admin']) %}
+          <a href="{{ url_for('marketplace.edit_item', item_id=item.id) }}"
+             class="btn-action btn-edit">
+            <i class="fas fa-edit mr-1"></i>Edit
+          </a>
+          <form method="POST" action="{{ url_for('marketplace.delete_item', item_id=item.id) }}"
+                onsubmit="return confirm('Are you sure you want to delete this item?');">
+            <button type="submit" class="btn-action btn-delete">
+              <i class="fas fa-trash-alt mr-1"></i>Delete
+            </button>
+          </form>
+          <a href="mailto:{{ item.contact_info }}" class="btn-action btn-secondary">
+            <i class="fas fa-envelope mr-1"></i>Contact Seller
+          </a>
+        {% elif current_user.is_authenticated and item.status == 'available' %}
+          <a href="{{ url_for('marketplace.buy_item', item_id=item.id) }}" class="btn-action btn-primary">
+            <i class="fas fa-shopping-cart mr-1"></i>Buy
+          </a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

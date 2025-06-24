@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+
+{% block title %}Campus Hub - Lost & Found{% endblock %}
+{% block lost_found_active %}underline font-semibold{% endblock %}
+
+{% block content %}
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+  <!-- Sidebar Actions -->
+  <aside class="lg:col-span-1 bg-white p-6 rounded-lg shadow-md">
+    <h2 class="text-xl font-bold text-primary mb-4">Quick Actions</h2>
+    <div class="space-y-3">
+      <a href="{{ url_for('lost_and_found.report') }}" class="block w-full text-center bg-primary text-white py-2 px-4 rounded hover:bg-secondary">Report Lost Item</a>
+      <a href="{{ url_for('lost_and_found.report') }}" class="block w-full text-center bg-secondary text-white py-2 px-4 rounded hover:bg-primary">Report Found Item</a>
+    </div>
+
+    <hr class="my-6">
+
+    <div class="space-y-1">
+      <h3 class="text-lg font-semibold text-primary">Statistics</h3>
+      <p>Total Items: <span class="font-medium">{{ total_items or 0 }}</span></p>
+      <p>Lost Items: <span class="font-medium">{{ total_lost or 0 }}</span></p>
+      <p>Found Items: <span class="font-medium">{{ total_found or 0 }}</span></p>
+    </div>
+
+    <hr class="my-6">
+
+    <h3 class="text-lg font-semibold text-primary mb-2">Recent Reports</h3>
+    {% if recent_items %}
+      <ul class="space-y-1 text-sm text-accent">
+        {% for item in recent_items %}
+          <li>
+            <span class="font-medium text-secondary">{{ item.name }}</span> &mdash; {{ item.status|capitalize }} at {{ item.location }}
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p class="text-sm text-gray-500">No recent items.</p>
+    {% endif %}
+  </aside>
+
+  <!-- Item Listing -->
+  <section class="lg:col-span-2">
+    <div class="mb-4 grid grid-cols-2 md:grid-cols-4 gap-4">
+      <input type="text" id="search" placeholder="Search..." class="col-span-2 p-2 rounded border border-accent">
+      <select id="status-filter" class="p-2 rounded border border-accent">
+        <option value="all">All Statuses</option>
+        <option value="lost">Lost</option>
+        <option value="found">Found</option>
+        <option value="returned">Returned</option>
+      </select>
+      <select id="priority-filter" class="p-2 rounded border border-accent">
+        <option value="all">All Priorities</option>
+        <option value="3">High</option>
+        <option value="2">Medium</option>
+        <option value="1">Low</option>
+      </select>
+    </div>
+
+    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {% for item in items %}
+        <div class="bg-white rounded-lg shadow-md overflow-hidden">
+          <img src="{{ url_for('static', filename=item.image_path[1:]) if item.image_path else '' }}" alt="Item Image" class="h-48 w-full object-cover">
+          <div class="p-4">
+            <div class="flex justify-between items-center mb-2">
+              <span class="text-sm px-2 py-1 rounded-full {{ 'bg-red-100 text-red-800' if item.status=='lost' else 'bg-green-100 text-green-800' }}">
+                {{ item.status|capitalize }}
+              </span>
+              {% if item.claimed_by_user %}<span class="text-xs text-orange-600 font-medium">Claimed by {{ item.claimed_by_user }}</span>{% endif %}
+            </div>
+            <h3 class="font-semibold text-lg text-primary">{{ item.name }}</h3>
+            <p class="text-sm text-gray-600">{{ item.description|truncate(100) }}</p>
+            <p class="text-sm mt-1"><strong>Location:</strong> {{ item.location }}</p>
+            <p class="text-sm"><strong>Date:</strong> {{ item.date }}</p>
+            <div class="mt-3 flex gap-2 flex-wrap">
+              <a href="{{ url_for('lost_and_found.item_detail', item_id=item.id) }}" class="text-sm px-3 py-1 rounded bg-primary text-white hover:bg-secondary">View</a>
+              {% if item.user_id == current_user.id or user.is_admin %}
+                <a href="{{ url_for('lost_and_found.edit_item', item_id=item.id) }}" class="text-sm px-3 py-1 rounded bg-secondary text-white hover:bg-primary">Edit</a>
+                {% if item.found_by_user %}
+                  <form method="post" action="{{ url_for('lost_and_found.remove_found', item_id=item.id) }}" class="inline">
+                    <button type="submit" class="text-sm px-3 py-1 rounded bg-blue-500 text-white hover:bg-blue-600">Remove Found</button>
+                  </form>
+                {% endif %}
+                {% if item.status == 'claimed' %}
+                  <form method="post" action="{{ url_for('lost_and_found.remove_claim', item_id=item.id) }}" class="inline">
+                    <button type="submit" class="text-sm px-3 py-1 rounded bg-yellow-500 text-white hover:bg-yellow-600">Remove Claim</button>
+                  </form>
+                {% endif %}
+                <form method="post" action="{{ url_for('lost_and_found.delete_item', item_id=item.id) }}" class="inline">
+                  <button type="submit" class="text-sm px-3 py-1 rounded bg-red-500 text-white hover:bg-red-600">Delete</button>
+                </form>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  </section>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  document.getElementById('search').addEventListener('input', function () {
+    const query = this.value.toLowerCase();
+    document.querySelectorAll('.bg-white').forEach(card => {
+      const text = card.textContent.toLowerCase();
+      card.style.display = text.includes(query) ? '' : 'none';
+    });
+  });
+
+  ['status', 'priority'].forEach(type => {
+    document.getElementById(type + '-filter').addEventListener('change', filterItems);
+  });
+
+  function filterItems() {
+    const sf = document.getElementById('status-filter').value;
+    const pf = document.getElementById('priority-filter').value;
+    document.querySelectorAll('.bg-white').forEach(card => {
+      const s = card.dataset.status;
+      const p = card.dataset.priority;
+      card.style.display = ((sf === 'all' || s === sf) && (pf === 'all' || p === pf)) ? '' : 'none';
+    });
+  }
+</script>
+{% endblock %}

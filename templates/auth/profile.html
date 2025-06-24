@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{% block title %}Campus Hub - My Profile{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+  <div class="bg-white shadow-lg rounded-2xl p-6 mb-6">
+    <div class="flex justify-between items-center">
+      <h1 class="text-2xl font-semibold text-[#14274E]">Welcome, {{ user.username }}</h1>
+      <div class="flex gap-4">
+        <button class="flex items-center gap-2 px-4 py-2 bg-[#394867] text-white rounded-lg hover:bg-[#14274E]"
+                type="button" data-bs-toggle="tab" data-bs-target="#settings">
+          <i class="fas fa-cog"></i> Edit Profile
+        </button>
+        <a href="{{ url_for('auth.logout') }}" class="flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600">
+          <i class="fas fa-sign-out-alt"></i> Logout
+        </a>
+      </div>
+    </div>
+    <div class="mt-6 flex flex-col md:flex-row gap-6 items-start">
+      <div class="flex-shrink-0 w-24 h-24 bg-gray-100 text-[#14274E] rounded-full flex items-center justify-center text-4xl">
+        <i class="fas fa-user"></i>
+      </div>
+      <div>
+        <p class="text-sm text-gray-600"><i class="fas fa-envelope"></i> {{ user.email }}</p>
+        <p class="text-sm text-gray-600"><i class="fas fa-user-tag"></i> {{ user.role|capitalize }}</p>
+        <p class="text-sm text-gray-600"><i class="fas fa-calendar-alt"></i> Member since: {{ user.created_at }}</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tab Navigation -->
+  <div class="border-b border-gray-200 mb-6">
+    <nav class="-mb-px flex gap-6">
+      <button class="tab-button text-[#14274E] border-b-2 border-[#14274E] pb-2" data-bs-toggle="tab" data-bs-target="#lost-found">Lost & Found</button>
+      <button class="tab-button text-gray-500 hover:text-[#14274E] pb-2" data-bs-toggle="tab" data-bs-target="#marketplace">Marketplace</button>
+      <button class="tab-button text-gray-500 hover:text-[#14274E] pb-2" data-bs-toggle="tab" data-bs-target="#settings">Settings</button>
+    </nav>
+  </div>
+
+  <!-- Tab Content -->
+  <div class="tab-content">
+    <div class="tab-pane show active" id="lost-found">
+      {% include 'lost_and_found/dashboard.html' %}
+    </div>
+    <div class="tab-pane" id="marketplace">
+      {% include 'marketplace/dashboard.html' %}
+    </div>
+    <div class="tab-pane" id="settings">
+      <div class="bg-white p-6 rounded-lg shadow">
+        <h2 class="text-xl font-semibold mb-4 text-[#14274E]">Edit Profile</h2>
+        <p class="text-sm text-gray-600 mb-2">This section will allow users to update profile info in future.</p>
+        <!-- Optional: Add a form here -->
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const tabs = document.querySelectorAll('[data-bs-toggle="tab"]');
+    tabs.forEach(btn => {
+      btn.addEventListener('click', function () {
+        document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('show', 'active'));
+        const target = document.querySelector(this.getAttribute('data-bs-target'));
+        if (target) target.classList.add('show', 'active');
+
+        tabs.forEach(b => b.classList.remove('border-b-2', 'border-[#14274E]', 'text-[#14274E]'));
+        this.classList.add('border-b-2', 'border-[#14274E]', 'text-[#14274E]');
+      });
+    });
+  });
+</script>
+{% endblock %}

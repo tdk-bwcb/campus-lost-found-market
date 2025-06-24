@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+
+{% block title %}Edit {{ item.name }} - Marketplace{% endblock %}
+{% block marketplace_active %}active{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 py-6">
+  <div class="bg-white rounded-2xl shadow-md p-6">
+    <h2 class="text-xl font-semibold mb-6">Edit Marketplace Item</h2>
+    <form action="{{ url_for('marketplace.edit_item', item_id=item.id) }}" method="POST" enctype="multipart/form-data" class="space-y-6">
+      <div class="grid md:grid-cols-2 gap-4">
+        <div>
+          <label for="name" class="form-label">Item Name</label>
+          <input type="text" id="name" name="name" class="form-input" value="{{ item.name }}" required>
+        </div>
+        <div>
+          <label for="price" class="form-label">Price (₹)</label>
+          <input type="number" id="price" name="price" class="form-input" value="{{ item.price }}" step="0.01" min="0" required>
+        </div>
+      </div>
+
+      <div>
+        <label for="description" class="form-label">Description</label>
+        <textarea id="description" name="description" class="form-textarea" rows="4" required>{{ item.description }}</textarea>
+      </div>
+
+      <div class="grid md:grid-cols-3 gap-4">
+        <div>
+          <label for="category" class="form-label">Category</label>
+          <select id="category" name="category" class="form-select" required>
+            {% for category in categories %}
+              <option value="{{ category.name }}" {% if category.name == item.category %}selected{% endif %}>
+                {{ category.name|capitalize }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label for="condition" class="form-label">Condition</label>
+          <select id="condition" name="condition" class="form-select" required>
+            {% for cond in ['new', 'like-new', 'good', 'fair', 'poor'] %}
+              <option value="{{ cond }}" {% if item.condition == cond %}selected{% endif %}>{{ cond|capitalize }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label for="status" class="form-label">Status</label>
+          <select id="status" name="status" class="form-select" required>
+            <option value="available" {% if item.status == 'available' %}selected{% endif %}>Available</option>
+            <option value="sold" {% if item.status == 'sold' %}selected{% endif %}>Sold</option>
+          </select>
+        </div>
+      </div>
+
+      <div>
+        <label class="form-label">Current Image</label>
+        <img src="{{ item.image_path and url_for('static', filename=item.image_path[1:]) or 'https://dummyimage.com/600x400/cccccc/000000.png&text=No+Image' }}" alt="{{ item.name }}" class="w-full max-h-64 object-contain mb-4 rounded-lg">
+
+        <label for="image_path" class="form-label">Upload New Image (optional)</label>
+        <input type="file" id="image_path" name="image_path" accept="image/*" onchange="previewImage(this)" class="form-input">
+        <div id="previewContainer" class="mt-3 hidden">
+          <img id="imagePreview" src="#" alt="Preview" class="max-h-60 rounded-lg border border-gray-300">
+        </div>
+      </div>
+
+      <div class="grid md:grid-cols-2 gap-4">
+        <div>
+          <label for="location" class="form-label">Location</label>
+          <input type="text" id="location" name="location" class="form-input" value="{{ item.location }}" required>
+        </div>
+        <div>
+          <label for="contact_info" class="form-label">Contact Info</label>
+          <input type="text" id="contact_info" name="contact_info" class="form-input" value="{{ item.contact_info }}" required>
+        </div>
+      </div>
+
+      <button type="submit" class="btn-submit w-full md:w-auto">Save Changes</button>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  function previewImage(input) {
+    const container = document.getElementById('previewContainer');
+    const preview = document.getElementById('imagePreview');
+    if (input.files && input.files[0]) {
+      const reader = new FileReader();
+      reader.onload = e => {
+        preview.src = e.target.result;
+        container.classList.remove('hidden');
+      };
+      reader.readAsDataURL(input.files[0]);
+    } else {
+      container.classList.add('hidden');
+    }
+  }
+</script>
+{% endblock %}

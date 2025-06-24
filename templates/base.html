@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}Campus Hub{% endblock %}</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#14274E',
+            secondary: '#394867',
+            accent: '#9BA4B4',
+            background: '#F1F6F9'
+          },
+          fontFamily: {
+            sans: ['Segoe UI', 'sans-serif']
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-background text-secondary font-sans">
+  <header class="bg-primary text-white shadow-md">
+    <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+      <a href="/" class="text-2xl font-bold">Campus Hub</a>
+      <nav class="space-x-4">
+        <a href="{{ url_for('lost_and_found.dashboard') }}" class="hover:underline {% block lost_found_active %}{% endblock %}">Lost & Found</a>
+        <a href="{{ url_for('marketplace.dashboard') }}" class="hover:underline {% block marketplace_active %}{% endblock %}">Marketplace</a>
+        {% if current_user.is_authenticated %}
+          <a href="{{ url_for('auth.profile') }}" class="hover:underline">Profile</a>
+        {% else %}
+          <a href="{{ url_for('auth.login') }}" class="hover:underline">Login</a>
+          <a href="{{ url_for('auth.register') }}" class="hover:underline">Register</a>
+        {% endif %}
+      </nav>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-4 py-8">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="space-y-2">
+          {% for category, message in messages %}
+            <div class="p-4 rounded bg-accent text-white">
+              {{ message }}
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="bg-secondary text-white text-center py-4 mt-8">
+    <p class="text-sm">&copy; 2025 Campus Hub. All rights reserved.</p>
+  </footer>
+
+  {% block scripts %}{% endblock %}
+</body>
+</html>

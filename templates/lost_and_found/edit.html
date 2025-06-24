@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+
+{% block title %}Campus Hub - Edit Lost & Found Item{% endblock %}
+
+{% block lost_found_active %}active{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 py-8">
+  <h2 class="text-2xl font-bold mb-6">Edit Lost & Found Item</h2>
+  <form action="{{ url_for('lost_and_found.edit_item', item_id=item.id) }}" method="POST" enctype="multipart/form-data" class="space-y-6">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div class="space-y-4">
+        <div>
+          <label for="name" class="block font-medium text-gray-700">Item Name</label>
+          <input type="text" id="name" name="name" class="mt-1 w-full rounded border-gray-300 focus:ring-indigo-500 focus:border-indigo-500" value="{{ item.name }}" required>
+        </div>
+
+        <div>
+          <label for="description" class="block font-medium text-gray-700">Description</label>
+          <textarea id="description" name="description" rows="4" class="mt-1 w-full rounded border-gray-300 focus:ring-indigo-500 focus:border-indigo-500" required>{{ item.description }}</textarea>
+        </div>
+
+        <div>
+          <label for="category" class="block font-medium text-gray-700">Category</label>
+          <select id="category" name="category" class="mt-1 w-full rounded border-gray-300 focus:ring-indigo-500 focus:border-indigo-500" required>
+            {% for category in categories %}
+              <option value="{{ category.name }}" {% if category.name == item.category %}selected{% endif %}>{{ category.name|capitalize }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div>
+          <label for="priority" class="block font-medium text-gray-700">Priority</label>
+          <select id="priority" name="priority" class="mt-1 w-full rounded border-gray-300 focus:ring-indigo-500 focus:border-indigo-500" required>
+            <option value="1" {% if item.priority==1 %}selected{% endif %}>Low</option>
+            <option value="2" {% if item.priority==2 %}selected{% endif %}>Medium</option>
+            <option value="3" {% if item.priority==3 %}selected{% endif %}>High</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block font-medium text-gray-700">Status</label>
+          <div class="mt-1 space-x-4">
+            <label class="inline-flex items-center">
+              <input type="radio" name="status" value="lost" class="text-indigo-600 focus:ring-indigo-500" {% if item.status=='lost' %}checked{% endif %}>
+              <span class="ml-2">Lost</span>
+            </label>
+            <label class="inline-flex items-center">
+              <input type="radio" name="status" value="found" class="text-indigo-600 focus:ring-indigo-500" {% if item.status=='found' %}checked{% endif %}>
+              <span class="ml-2">Found</span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <div class="space-y-4">
+        <div>
+          <label for="date" class="block font-medium text-gray-700">Date/Time</label>
+          <input type="datetime-local" id="date" name="date" class="mt-1 w-full rounded border-gray-300 focus:ring-indigo-500 focus:border-indigo-500" value="{{ item.date }}" required>
+        </div>
+
+        <div>
+          <label for="location" class="block font-medium text-gray-700">Location</label>
+          <input type="text" id="location" name="location" class="mt-1 w-full rounded border-gray-300 focus:ring-indigo-500 focus:border-indigo-500" value="{{ item.location }}" required>
+        </div>
+
+        <div>
+          <label for="contact_info" class="block font-medium text-gray-700">Contact Phone</label>
+          <input type="tel" id="contact_info" name="contact_info" pattern="\d{10}" maxlength="10" class="mt-1 w-full rounded border-gray-300 focus:ring-indigo-500 focus:border-indigo-500" value="{{ item.contact_info }}" required>
+        </div>
+
+        <div>
+          <label class="block font-medium text-gray-700">Current Image</label>
+          <img src="{{ item.image_path and url_for('static', filename=item.image_path[1:]) or 'https://dummyimage.com/600x400/cccccc/000000.png&text=No+Image' }}" alt="{{ item.name }}" class="w-full rounded shadow-md mt-2">
+        </div>
+
+        <div>
+          <label for="image_path" class="block font-medium text-gray-700">Upload New Image</label>
+          <input type="file" id="image_path" name="image_path" accept="image/*" onchange="previewImage(this)" class="mt-1 w-full text-sm">
+          <p class="text-sm text-gray-500">Optional. Click or drag file to upload.</p>
+        </div>
+
+        <div id="previewContainer" class="hidden">
+          <img id="imagePreview" src="#" alt="Preview" class="w-full rounded shadow-md mt-2">
+        </div>
+      </div>
+    </div>
+
+    <button type="submit" class="mt-6 px-6 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700">Save Changes</button>
+  </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  function previewImage(input) {
+    const container = document.getElementById('previewContainer');
+    const preview = document.getElementById('imagePreview');
+    if (input.files && input.files[0]) {
+      const reader = new FileReader();
+      reader.onload = e => {
+        preview.src = e.target.result;
+        container.classList.remove('hidden');
+      };
+      reader.readAsDataURL(input.files[0]);
+    } else {
+      container.classList.add('hidden');
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    const dateInput = document.getElementById('date');
+    if (dateInput && dateInput.value.includes(' ')) {
+      const [d, t] = dateInput.value.split(' ');
+      dateInput.value = `${d}T${t.slice(0,5)}`;
+    }
+  });
+</script>
+{% endblock %}

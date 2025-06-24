@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block title %}Campus Hub - Item Details{% endblock %}
+
+{% block lost_found_active %}active{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto px-4 py-8">
+  <div class="mb-6 border-b pb-4">
+    <h1 class="text-3xl font-bold text-gray-800">{{ item.name }}</h1>
+    <p class="text-sm text-gray-500">Reported on {{ item.date }}</p>
+    <div class="mt-2 flex flex-wrap gap-2">
+      <span class="px-3 py-1 text-sm rounded-full font-medium text-white {{ 'bg-red-500' if item.status == 'lost' else 'bg-green-500' if item.status == 'found' else 'bg-yellow-500' }}">
+        {% if item.status=='lost' %}Lost{% elif item.status=='found' %}Found{% else %}Claimed{% endif %}
+      </span>
+      {% if found_by_user %}
+      <span class="text-sm text-blue-600">Found by {{ found_by_user }}</span>
+      {% endif %}
+      {% if claimed_by_user %}
+      <span class="text-sm text-yellow-700">Claimed by {{ claimed_by_user }}</span>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="flex flex-col md:flex-row gap-8">
+    <div class="w-full md:w-1/2">
+      <img class="rounded-lg shadow-md w-full object-cover" src="{{ url_for('static', filename=item.image_path[1:]) if item.image_path else 'https://dummyimage.com/600x400/cccccc/000000.png&text=No+Image' }}" alt="{{ item.name }}">
+    </div>
+    <div class="w-full md:w-1/2 space-y-4">
+      <div>
+        <h4 class="font-semibold text-gray-700">Description</h4>
+        <p class="text-gray-600">{{ item.description }}</p>
+      </div>
+      <div><span class="font-semibold">Category:</span> {{ item.category|capitalize }}</div>
+      <div><span class="font-semibold">Priority:</span> {% if item.priority=='3' %}High{% elif item.priority=='2' %}Medium{% else %}Low{% endif %}</div>
+      <div><span class="font-semibold">Location:</span> {{ item.location }}</div>
+      <div><span class="font-semibold">Contact Info:</span> {{ item.contact_info }}</div>
+      <div><span class="font-semibold">Posted By:</span> {{ item.username }}</div>
+
+      <div class="flex flex-wrap gap-2 mt-4">
+        <a href="{{ url_for('lost_and_found.dashboard') }}" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded text-sm font-medium">
+          <i class="fas fa-arrow-left"></i> Back
+        </a>
+        {% if item.user_id == current_user.id or user.is_admin %}
+          <a href="{{ url_for('lost_and_found.edit_item', item_id=item.id) }}" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm">
+            <i class="fas fa-edit"></i> Edit
+          </a>
+          <form method="post" action="{{ url_for('lost_and_found.delete_item', item_id=item.id) }}" onsubmit="return confirm('Delete this item?');">
+            <button type="submit" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded text-sm">
+              <i class="fas fa-trash"></i> Delete
+            </button>
+          </form>
+        {% endif %}
+
+        {% if item.status=='found' and item.user_id != current_user.id %}
+          <form method="post" action="{{ url_for('lost_and_found.claim_item', item_id=item.id) }}">
+            <button type="submit" class="px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-white rounded text-sm">
+              <i class="fas fa-handshake"></i> Claim
+            </button>
+          </form>
+        {% elif item.status=='lost' and item.user_id != current_user.id %}
+          <form method="post" action="{{ url_for('lost_and_found.found_user', item_id=item.id) }}">
+            <button type="submit" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded text-sm">
+              <i class="fas fa-check"></i> Found It
+            </button>
+          </form>
+        {% endif %}
+
+        {% if found_by_user and (item.user_id==current_user.id or user.is_admin) %}
+          <form method="post" action="{{ url_for('lost_and_found.remove_found', item_id=item.id) }}" onsubmit="return confirm('Remove found tag?');">
+            <button type="submit" class="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded text-sm">
+              <i class="fas fa-undo"></i> Remove Found
+            </button>
+          </form>
+        {% endif %}
+
+        {% if item.status=='claimed' and (item.user_id==current_user.id or user.is_admin) %}
+          <form method="post" action="{{ url_for('lost_and_found.remove_claim', item_id=item.id) }}" onsubmit="return confirm('Remove claim?');">
+            <button type="submit" class="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded text-sm">
+              <i class="fas fa-undo"></i> Remove Claim
+            </button>
+          </form>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

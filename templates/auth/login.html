@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}Campus Hub - Login{% endblock %}
+
+{% block content %}
+<div class="flex items-center justify-center min-h-screen bg-[#F1F6F9] px-4 py-10">
+  <div class="w-full max-w-md bg-white rounded-2xl shadow-xl p-8">
+    <div class="mb-6 text-center">
+      <h2 class="text-3xl font-bold text-[#14274E]">Campus Hub</h2>
+      <p class="text-[#9BA4B4] mt-2">Sign in to your account</p>
+    </div>
+
+    {% if error %}
+      <div class="bg-red-100 text-red-700 px-4 py-3 rounded mb-4 border-l-4 border-red-500">
+        ⚠️ {{ error }}
+      </div>
+    {% endif %}
+
+    <form method="POST" action="{{ url_for('auth.login') }}" class="space-y-5">
+      <div>
+        <label for="username" class="block text-sm font-semibold text-[#394867]">Username</label>
+        <input id="username" name="username" type="text" autocomplete="username" required
+          class="w-full px-4 py-3 mt-1 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#14274E]">
+      </div>
+
+      <div>
+        <label for="password" class="block text-sm font-semibold text-[#394867]">Password</label>
+        <input id="password" name="password" type="password" autocomplete="current-password" required
+          class="w-full px-4 py-3 mt-1 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#14274E]">
+      </div>
+
+      <div class="flex items-center space-x-2">
+        <input id="remember" name="remember" type="checkbox"
+          class="w-4 h-4 text-[#14274E] border-gray-300 rounded focus:ring-[#394867]">
+        <label for="remember" class="text-sm text-[#394867]">Remember me</label>
+      </div>
+
+      <button type="submit"
+        class="w-full bg-[#14274E] text-white py-3 rounded-lg hover:bg-[#394867] transition font-semibold shadow-md">
+        Sign In
+      </button>
+    </form>
+
+    <div class="text-center mt-6 text-sm text-[#9BA4B4]">
+      New to Campus Hub? 
+      <a href="{{ url_for('auth.register') }}" class="text-[#14274E] font-medium hover:underline">
+        Create an account
+      </a>
+    </div>
+  </div>
+</div>
+{% endblock %}
